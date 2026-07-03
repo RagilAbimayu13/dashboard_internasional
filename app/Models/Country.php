@@ -46,4 +46,10 @@ class Country extends Model
     {
         return $this->hasMany(Port::class);
     }
+
+    // Relasi: satu country punya banyak berita terkait
+    public function news()
+    {
+        return $this->hasMany(NewsCache::class);
+    }
 }

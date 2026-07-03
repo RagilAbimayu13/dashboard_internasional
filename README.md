@@ -1,145 +1,133 @@
 # Global Supply Chain Risk Intelligence Platform
 
-Platform monitoring risiko rantai pasok global berbasis integrasi multi-API dan analitik data. Dibangun dengan Laravel, mengombinasikan data cuaca, ekonomi, kurs mata uang, dan (segera) berita untuk membantu pengambilan keputusan bisnis terkait risiko impor/ekspor antar negara.
+Tugas akhir project - platform monitoring risiko rantai pasok global. Intinya narik data dari beberapa API (cuaca, ekonomi, kurs, berita) terus digabung jadi satu sistem yang bisa kasih skor risiko per negara buat bantu keputusan bisnis (misal mau import barang dari negara mana yang risikonya rendah).
 
-## Tech Stack
+## Stack yang dipakai
 
-**Backend**
-- PHP 8.5
-- Laravel 13
-- MySQL (via XAMPP)
+Backend: PHP 8.5 + Laravel 13 + MySQL (pake XAMPP)
 
-**Frontend** *(belum dikerjakan)*
-- Bootstrap 5
-- AJAX / JavaScript ES6
+Frontend belum digarap, rencananya Bootstrap 5 + Chart.js + Leaflet.js buat peta.
 
-**Visualisasi** *(belum dikerjakan)*
-- Chart.js
-- Leaflet.js
+## Soal API - ada beberapa yang beda dari rencana awal
 
-## Status API Eksternal
+Waktu mulai ngerjain, ternyata REST Countries API (yang harusnya dipake buat data negara) udah **deprecated**. Sempet bingung kenapa selalu gagal fetch, ternyata providernya udah matiin versi lama dan minta API key buat versi baru. Akhirnya cari alternatif dan ketemu **countries.dev** yang masih gratis tanpa key, datanya juga setara.
 
-Beberapa API yang tertulis di spesifikasi awal sudah berubah/deprecated sejak deskripsi tugas dibuat. Berikut API yang benar-benar dipakai di project ini beserta penggantinya:
+Yang lain masih sesuai rencana:
+- Data ekonomi (GDP, inflasi, populasi) → World Bank API
+- Cuaca → Open-Meteo (plus geocoding API mereka juga buat cari koordinat negara)
+- Kurs mata uang → ExchangeRate-API versi open access (open.er-api.com), gratis dan sekali call langsung dapet semua currency
+- Berita → GNews, ini yang butuh daftar akun dulu (tapi tetep gratis)
+- Data pelabuhan → awalnya mau pake World Port Index resmi tapi susah di-download langsung, jadi pake dataset JSON yang udah ada di GitHub (sumbernya sama, cuma udah diolah jadi format yang gampang dipake)
 
-| Kebutuhan Data | API yang Dipakai | Keterangan |
-|---|---|---|
-| Data negara (nama, kode, currency, region, capital, flag) | [countries.dev](https://countries.dev) | Pengganti REST Countries v3.1 yang sudah deprecated. Gratis, tanpa API key. |
-| GDP, inflasi, populasi | [World Bank API](https://api.worldbank.org) | Sesuai spek awal. Gratis, tanpa API key. |
-| Koordinat negara (lat/lng) | [Open-Meteo Geocoding API](https://geocoding-api.open-meteo.com) | Gratis, tanpa API key. Dibutuhkan sebagai prasyarat untuk fetch cuaca. |
-| Cuaca real-time | [Open-Meteo Forecast API](https://api.open-meteo.com) | Sesuai spek awal. Gratis, tanpa API key, hingga 10.000 request/hari. |
-| Kurs mata uang | [ExchangeRate-API (open access)](https://open.er-api.com) | Sesuai spek awal (provider sama). Gratis, tanpa API key. 1 request mengambil kurs semua mata uang sekaligus. |
-| Berita ekonomi/logistik/geopolitik | GNews API | *Belum diimplementasikan.* Butuh signup akun gratis (bukan komersial, limit 100 request/hari). |
-| Pelabuhan dunia | World Port Index Dataset | *Belum diimplementasikan.* |
-| Peta dunia | OpenStreetMap + Leaflet.js | *Belum diimplementasikan.* |
+## Database
 
-## Skema Database
+Ada 14 tabel. Yang penting dibedain: data yang statis (kayak nama negara, kode ISO) sama data yang berubah-ubah dari waktu ke waktu (GDP, cuaca, kurs) - yang kedua ini disimpen sebagai history, jadi tiap kali di-fetch nambah row baru, bukan nimpa yang lama. Ini penting biar nanti bisa bikin grafik trend.
 
-14 tabel, dirancang dengan pemisahan data statis vs data historis (time-series) supaya mendukung fitur grafik trend di spek.
+Tabel-tabel utama:
+- `countries` - data dasar negara
+- `economic_indicators`, `weather_snapshots`, `exchange_rates` - history data yang berubah
+- `risk_scores` - hasil perhitungan risk scoring
+- `ports` - data pelabuhan
+- `news_cache` - berita + hasil sentiment analysis
+- `positive_words` / `negative_words` - dictionary buat sentiment analysis (20 kata masing-masing)
+- `watchlists`, `articles` - buat fitur favorit & admin (belum diimplementasi fiturnya, tabelnya udah ada)
 
-**Data statis**
-- `countries` — nama, kode ISO, currency, region, capital, koordinat, flag
+## Soal kelengkapan data (penting buat dijelasin kalo ditanya)
 
-**Data historis** *(1 negara bisa punya banyak baris, dicatat per waktu fetch)*
-- `economic_indicators` — GDP, inflasi, populasi, ekspor, impor
-- `weather_snapshots` — temperatur, curah hujan, kecepatan angin, storm risk
-- `exchange_rates` — kurs terhadap USD
-- `risk_scores` — hasil Risk Scoring Engine *(belum diimplementasikan)*
+Nggak semua negara punya data lengkap di semua kategori, dan ini emang wajar - bukan bug. Beberapa negara/teritori kecil memang nggak punya data di World Bank, atau nama negaranya beda format antar dataset satu sama lain jadi susah dicocokin otomatis.
 
-**Fitur lain**
-- `ports` — data pelabuhan *(tabel sudah ada, data belum diisi)*
-- `news_cache` — cache berita + hasil sentiment analysis *(tabel sudah ada, data belum diisi)*
-- `watchlists` — negara favorit yang dipantau user
-- `articles` — artikel analisis buatan admin
-- `positive_words` / `negative_words` — dictionary untuk sentiment analysis *(tabel sudah ada, data belum diisi)*
+Kira-kira segini progresnya:
+- Negara dasar: 250/250, lengkap semua
+- Data ekonomi: sekitar 212/250 (85%)
+- Koordinat: 247/250
+- Cuaca: sekitar 95%
+- Kurs: 244/249
+- Pelabuhan: awalnya cuma 71% yang match, abis diperbaikin logic pencocokan namanya (pake alias + fuzzy matching) naik jadi 91%
 
-**Bawaan Laravel**
-- `users`, `cache`, `jobs`, `personal_access_tokens`
+Sisanya emang keterbatasan dari sumber datanya sendiri, udah dicoba beberapa kali fetch ulang juga hasilnya stabil di angka segitu.
 
-## Artisan Commands
+## Command-command yang dipake
 
-Command custom untuk fetch data dari API eksternal. Semua command aman dijalankan berulang kali (idempotent — otomatis skip data yang sudah ada, kecuali dinyatakan lain).
+Semua data di-fetch pake custom Artisan command, bukan diinput manual (250 negara mana mungkin diketik satu-satu):
 
-```bash
-# Fetch 250 negara dari countries.dev
-php artisan fetch:countries
-
-# Fetch GDP, inflasi, populasi dari World Bank (skip negara yang sudah punya data)
-php artisan fetch:economic
-
-# Fetch koordinat lat/lng negara (skip negara yang sudah punya koordinat)
-php artisan fetch:coordinates
-
-# Fetch cuaca real-time (SELALU insert baris baru — untuk data historis/trend)
-php artisan fetch:weather
-
-# Fetch kurs semua mata uang (1 API call untuk semua negara)
-php artisan fetch:exchangerates
+```
+php artisan fetch:countries        # negara dari countries.dev
+php artisan fetch:economic         # GDP, inflasi, populasi
+php artisan fetch:coordinates      # lat/lng buat keperluan cuaca
+php artisan fetch:weather          # cuaca real-time
+php artisan fetch:exchangerates    # kurs mata uang
+php artisan fetch:ports            # data pelabuhan
+php artisan fetch:news             # berita umum + sentiment
+php artisan match:news-countries   # cocokin berita yang udah ada ke negara
+php artisan fetch:news-country     # berita spesifik buat 60 negara GDP terbesar
+php artisan calculate:risk         # hitung risk score
 ```
 
-## API Endpoints
+Kebanyakan command ini aman dijalanin berkali-kali, bakal skip data yang udah ada (kecuali weather & exchange rate yang emang didesain buat nyimpen history, jadi refresh tiap 6 jam).
 
-| Method | Endpoint | Keterangan |
-|---|---|---|
-| GET | `/api/countries` | Daftar semua negara |
-| GET | `/api/countries/{id}` | Detail 1 negara + data ekonomi, cuaca, kurs terbaru |
+## Risk Scoring
 
-*Endpoint lain (`/api/risk`, `/api/ports`, `/api/news`, `/api/currency`) sesuai spek — belum diimplementasikan.*
+Formula risk score ngikutin contoh yang ada di soal:
 
-## Progress Checklist
+```
+Total Risk = (Weather x 30%) + (Inflation x 20%) + (News Sentiment x 40%) + (Currency x 10%)
+```
 
-- [x] Environment setup (PHP, Composer, MySQL, Laravel)
-- [x] Skema database (14 tabel + migration)
-- [x] Model Eloquent dengan relasi
-- [x] Integrasi countries.dev (250 negara)
-- [x] Integrasi World Bank API (189 negara dengan data ekonomi)
-- [x] Integrasi Open-Meteo Geocoding (244 negara dengan koordinat)
-- [x] Integrasi Open-Meteo Forecast (233 negara dengan data cuaca)
-- [x] Integrasi ExchangeRate-API (244 negara dengan kurs)
-- [x] Endpoint `/api/countries` dan `/api/countries/{id}`
-- [ ] Integrasi GNews API
-- [ ] Sentiment Analysis (lexicon-based, PHP)
-- [ ] Risk Scoring Engine
-- [ ] Data pelabuhan (World Port Index)
-- [ ] Endpoint API sisanya (`/api/risk`, `/api/ports`, `/api/news`, `/api/currency`)
-- [ ] Frontend (Bootstrap, AJAX)
-- [ ] Visualisasi (Chart.js — GDP/Inflation/Currency/Risk Trend)
-- [ ] Peta interaktif (Leaflet.js — Global Weather Monitoring, Port Location Dashboard)
-- [ ] Country Comparison Engine
-- [ ] Favorite Monitoring List (watchlist)
-- [ ] Admin Dashboard
+Tiap faktor dikonversi ke skala 0-100 dulu (100 = paling berisiko):
+- Weather: berdasarkan storm_risk (low=10, medium=50, high=90)
+- Inflation: linear, makin tinggi inflasinya makin gede skornya (dicap max di inflasi 20%)
+- News sentiment: rasio berita negatif dibanding total berita
+- Currency: dihitung dari seberapa besar perubahan kurs antar 2 data terakhir (volatilitas)
 
-## Instalasi (Setup dari Nol)
+Kategori: <33 = Low, 33-65 = Medium, >65 = High.
+
+Note: sentiment berita cuma spesifik buat 60 negara dengan GDP terbesar (biar hemat kuota API gratis yang cuma 100 request/hari), negara lain pake rata-rata sentiment global sebagai gantinya.
+
+## Endpoint API yang udah jadi
+
+```
+GET /api/countries          -> semua negara
+GET /api/countries/{id}     -> detail 1 negara + ekonomi, cuaca, kurs, risk score, berita, pelabuhan
+GET /api/risk                -> ranking risk score semua negara
+GET /api/ports                -> semua pelabuhan (bisa difilter ?country_id=)
+GET /api/news                 -> berita (bisa difilter ?category= dan ?country_id=)
+```
+
+## Yang masih perlu dikerjain
+
+- Frontend (belum disentuh sama sekali, masih murni backend/API)
+- Visualisasi pake Chart.js
+- Peta interaktif Leaflet.js
+- Country comparison
+- Watchlist (favorit negara)
+- Admin dashboard
+- Endpoint /api/currency terpisah
+
+## Cara jalanin dari awal
 
 ```bash
-# 1. Clone/masuk ke folder project
-cd dashboard_internasional
-
-# 2. Install dependency
 composer install
-
-# 3. Copy .env dan sesuaikan koneksi database
 cp .env.example .env
-# edit DB_DATABASE, DB_USERNAME, DB_PASSWORD sesuai environment lokal
+# isi DB_DATABASE, DB_USERNAME, DB_PASSWORD di .env
+# tambahin GNEWS_API_KEY=xxx (daftar gratis di gnews.io)
 
-# 4. Generate application key
 php artisan key:generate
-
-# 5. Jalankan migration
 php artisan migrate
+php artisan db:seed --class=PositiveWordSeeder
+php artisan db:seed --class=NegativeWordSeeder
 
-# 6. Fetch data awal (berurutan, karena beberapa bergantung pada tabel countries)
 php artisan fetch:countries
 php artisan fetch:economic
 php artisan fetch:coordinates
 php artisan fetch:weather
 php artisan fetch:exchangerates
+php artisan fetch:ports
+php artisan fetch:news
+php artisan match:news-countries
+php artisan fetch:news-country
+php artisan calculate:risk
 
-# 7. Jalankan server
 php artisan serve
 ```
 
-Akses di `http://127.0.0.1:8000`.
-
-## Catatan Pengembangan
-
-Project ini dikerjakan sebagai tugas akhir mata kuliah, dengan interpretasi dan algoritma (khususnya Risk Scoring Engine dan Sentiment Analysis) dirancang secara mandiri sesuai ketentuan dosen bahwa tiap mahasiswa harus memiliki pendekatan yang berbeda.
+Buka di `http://127.0.0.1:8000`
