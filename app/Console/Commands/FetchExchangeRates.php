@@ -31,7 +31,12 @@ class FetchExchangeRates extends Command
         }
 
         $rates = $data['rates'];
-        $countries = Country::whereNotNull('currency_code')->get();
+
+        $countries = Country::whereNotNull('currency_code')
+            ->whereDoesntHave('exchangeRates', function ($q) {
+                $q->where('recorded_at', '>=', now()->subHours(6));
+            })
+            ->get();
 
         $this->info("Memproses {$countries->count()} negara...");
         $bar = $this->output->createProgressBar($countries->count());

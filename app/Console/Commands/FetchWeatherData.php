@@ -14,7 +14,12 @@ class FetchWeatherData extends Command
 
     public function handle()
     {
-        $countries = Country::whereNotNull('latitude')->get();
+        $countries = Country::whereNotNull('latitude')
+            ->whereDoesntHave('weatherSnapshots', function ($q) {
+                $q->where('recorded_at', '>=', now()->subHours(6));
+            })
+            ->get();
+
         $this->info("Memproses {$countries->count()} negara...");
 
         $bar = $this->output->createProgressBar($countries->count());
