@@ -13,6 +13,8 @@ class Country extends Model
         'region',
         'capital',
         'flag_url',
+        'latitude',
+        'longitude',
     ];
 
     // Relasi: satu country punya banyak economic indicators

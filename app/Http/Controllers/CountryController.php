@@ -7,10 +7,21 @@ use Illuminate\Http\Request;
 
 class CountryController extends Controller
 {
+    // GET /api/countries — daftar semua negara
     public function index()
     {
-        $countries = Country::all();
+        return response()->json(Country::all());
+    }
 
-        return response()->json($countries);
+    // GET /api/countries/{id} — detail 1 negara + data terkaitnya
+    public function show($id)
+    {
+        $country = Country::with([
+            'economicIndicators' => fn ($q) => $q->latest('recorded_at')->limit(1),
+            'weatherSnapshots' => fn ($q) => $q->latest('recorded_at')->limit(1),
+            'exchangeRates' => fn ($q) => $q->latest('recorded_at')->limit(1),
+        ])->findOrFail($id);
+
+        return response()->json($country);
     }
 }
