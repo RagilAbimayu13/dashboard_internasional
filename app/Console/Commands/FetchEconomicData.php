@@ -21,11 +21,15 @@ class FetchEconomicData extends Command
         $bar->start();
 
         $failed = 0;
-        $skippedExisting = 0;
+        $skippedComplete = 0;
+        $updated = 0;
 
         foreach ($countries as $country) {
-            if (EconomicIndicator::where('country_id', $country->id)->exists()) {
-                $skippedExisting++;
+            $existing = EconomicIndicator::where('country_id', $country->id)->first();
+
+            // Skip HANYA kalau data yang sudah ada benar-benar lengkap (GDP, inflasi, populasi semuanya terisi)
+            if ($existing && $existing->gdp !== null && $existing->inflation_rate !== null && $existing->population !== null) {
+                $skippedComplete++;
                 $bar->advance();
                 continue;
             }
@@ -40,20 +44,30 @@ class FetchEconomicData extends Command
                 continue;
             }
 
-            EconomicIndicator::create([
-                'country_id' => $country->id,
-                'gdp' => $gdp,
-                'inflation_rate' => $inflation,
-                'population' => $population,
-                'recorded_at' => now(),
-            ]);
+            if ($existing) {
+                // Update baris yang sudah ada, isi field yang sebelumnya kosong
+                $existing->update([
+                    'gdp' => $gdp ?? $existing->gdp,
+                    'inflation_rate' => $inflation ?? $existing->inflation_rate,
+                    'population' => $population ?? $existing->population,
+                ]);
+                $updated++;
+            } else {
+                EconomicIndicator::create([
+                    'country_id' => $country->id,
+                    'gdp' => $gdp,
+                    'inflation_rate' => $inflation,
+                    'population' => $population,
+                    'recorded_at' => now(),
+                ]);
+            }
 
             $bar->advance();
         }
 
         $bar->finish();
         $this->newLine();
-        $this->info("Selesai. {$skippedExisting} sudah ada sebelumnya, {$failed} tidak ada data.");
+        $this->info("Selesai. {$skippedComplete} sudah lengkap, {$updated} diperbarui, {$failed} tidak ada data sama sekali.");
 
         return 0;
     }

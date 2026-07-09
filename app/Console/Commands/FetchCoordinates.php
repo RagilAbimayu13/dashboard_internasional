@@ -80,4 +80,4 @@ class FetchCoordinates extends Command
             return null;
         }
     }
-}
+}   
