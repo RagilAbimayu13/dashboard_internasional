@@ -52,4 +52,10 @@ class Country extends Model
     {
         return $this->hasMany(NewsCache::class);
     }
+
+    // Relasi: satu country bisa masuk watchlist banyak user
+    public function watchlists()
+    {
+        return $this->hasMany(Watchlist::class);
+    }
 }
