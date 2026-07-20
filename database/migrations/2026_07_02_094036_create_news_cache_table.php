@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('news_cache', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('source_url');
+            $table->longText('source_url');
             $table->foreignId('country_id')->nullable()->constrained()->onDelete('set null');
             $table->string('category')->nullable(); // logistics, trade, geopolitics
             $table->string('sentiment')->nullable(); // positive, neutral, negative
