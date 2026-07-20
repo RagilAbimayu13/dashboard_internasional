@@ -94,11 +94,12 @@ class FetchWeatherData extends Command
             return 'unknown';
         }
 
-        if ($windSpeed > 60 || $rainfall > 20) {
+        // Threshold disesuaikan dengan distribusi normal data Open-Meteo harian
+        if ($windSpeed > 40 || $rainfall > 15) {
             return 'high';
         }
 
-        if ($windSpeed > 30 || $rainfall > 10) {
+        if ($windSpeed > 20 || $rainfall > 5) {
             return 'medium';
         }
 

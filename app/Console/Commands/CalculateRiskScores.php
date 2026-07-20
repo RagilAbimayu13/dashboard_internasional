@@ -117,14 +117,15 @@ class CalculateRiskScores extends Command
     private function calculateCurrencyRisk($exchangeRates): ?float
     {
         if ($exchangeRates->count() < 2) {
-            return $exchangeRates->count() === 1 ? 30 : null;
+            // Gunakan skor 50 (netral) sebagai fallback jika data histori belum cukup
+            return $exchangeRates->count() === 1 ? 50 : null;
         }
 
         $latest = $exchangeRates->first()->rate_to_usd;
         $previous = $exchangeRates->last()->rate_to_usd;
 
         if ($previous == 0) {
-            return 30;
+            return 50;
         }
 
         $percentChange = abs(($latest - $previous) / $previous) * 100;
