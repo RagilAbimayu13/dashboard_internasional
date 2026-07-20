@@ -13,6 +13,7 @@
 
 ## 📋 Daftar Isi
 
+- [Live Demo & Akses Admin](#live-demo--akses-admin)
 - [Tentang Proyek](#tentang-proyek)
 - [Teknologi yang Digunakan](#teknologi-yang-digunakan)
 - [Sumber Data & API Eksternal](#sumber-data--api-eksternal)
@@ -24,6 +25,17 @@
 - [Cara Instalasi](#cara-instalasi)
 - [Yang Masih Perlu Dikerjakan](#yang-masih-perlu-dikerjakan)
 - [Kontribusi](#kontribusi)
+
+---
+
+## 🌐 Live Demo & Akses Admin
+
+Aplikasi ini sudah di-hosting dan dapat diakses secara langsung melalui tautan berikut:
+👉 **[Live Demo Dashboard Internasional](https://dashboardinternasional-production.up.railway.app/)**
+
+**Kredensial Login Admin:**
+- **Email:** `ragilrifkyabimayu@gmail.com`
+- **Password:** `Ragil123`
 
 ---
 
