@@ -67,16 +67,20 @@ class CalculateRiskScores extends Command
 
             $totalScore = round($totalScore, 2);
 
-            RiskScore::create([
-                'country_id' => $country->id,
-                'weather_score' => $weatherScore,
-                'inflation_score' => $inflationScore,
-                'currency_score' => $currencyScore,
-                'news_sentiment_score' => $newsScore,
-                'total_score' => $totalScore,
-                'risk_level' => $this->classifyRiskLevel($totalScore),
-                'calculated_at' => now(),
-            ]);
+            RiskScore::updateOrCreate(
+                [
+                    'country_id' => $country->id,
+                ],
+                [
+                    'weather_score' => $weatherScore,
+                    'inflation_score' => $inflationScore,
+                    'currency_score' => $currencyScore,
+                    'news_sentiment_score' => $newsScore,
+                    'total_score' => $totalScore,
+                    'risk_level' => $this->classifyRiskLevel($totalScore),
+                    'calculated_at' => now(),
+                ]
+            );
 
             $processed++;
             $bar->advance();
