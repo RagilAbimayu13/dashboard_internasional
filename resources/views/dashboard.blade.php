@@ -466,15 +466,19 @@
       </div>
       <div class="col-md-6 mt-3 mt-md-0">
         <div class="row text-center">
-          <div class="col-4">
+          <div class="col-3">
             <div class="stat-value mono" id="statTotal">-</div>
             <div class="stat-label">Negara Pantauan</div>
           </div>
-          <div class="col-4">
+          <div class="col-3">
+            <div class="stat-value mono text-success" id="statLow" style="text-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">-</div>
+            <div class="stat-label">Low Risk</div>
+          </div>
+          <div class="col-3">
             <div class="stat-value mono text-warning" id="statMedium" style="text-shadow: 0 0 10px rgba(245, 158, 11, 0.25);">-</div>
             <div class="stat-label">Medium Risk</div>
           </div>
-          <div class="col-4">
+          <div class="col-3">
             <div class="stat-value mono text-danger" id="statHigh" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.25);">-</div>
             <div class="stat-label">High Risk</div>
           </div>
@@ -1359,6 +1363,7 @@ async function loadDashboardData() {
 
     // Update Counter HUD
     document.getElementById('statTotal').textContent = allCountries.length;
+    document.getElementById('statLow').textContent = scores.filter(s => s.risk_level === 'Low').length;
     document.getElementById('statMedium').textContent = scores.filter(s => s.risk_level === 'Medium').length;
     document.getElementById('statHigh').textContent = scores.filter(s => s.risk_level === 'High').length;
 
