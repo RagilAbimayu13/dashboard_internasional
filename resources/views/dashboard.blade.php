@@ -299,12 +299,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ===== RESPONSIVE SIDEBAR OVERLAY ===== */
-  @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; }
-    .content-body { padding: 1.25rem; }
-  }
+
 
   .result-item-port {
     cursor: pointer;

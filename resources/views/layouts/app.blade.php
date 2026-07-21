@@ -528,6 +528,49 @@
     animation: pulse 2s infinite;
   }
 
+  /* ===== RESPONSIVE LAYOUT ===== */
+  @media (max-width: 991.98px) {
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease-in-out;
+    }
+    .sidebar.show {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+    }
+    .top-bar {
+      padding: 0 1.5rem;
+    }
+    .content-body {
+      padding: 1.5rem;
+    }
+    .mobile-menu-toggle {
+      display: block !important;
+    }
+  }
+  .mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+  }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+    z-index: 99;
+  }
+  .sidebar-overlay.show {
+    display: block;
+  }
+
   /* ===== GLOBAL BOOTSTRAP CONTRAST OVERRIDES ===== */
   /* Bootstrap's .text-muted (#6c757d) is invisible on dark backgrounds */
   .text-muted {
@@ -555,7 +598,8 @@
   <!-- Main Grid Frame -->
   <div class="luxury-wrapper">
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
         <span class="gold-text-glow">🌍 GLOBAL LOGISTICS DASHBOARD</span>
         <small class="brand-subtitle">SUPPLY CHAIN RISK INTERNASIONAL</small>
@@ -639,7 +683,13 @@
     <main class="main-content">
       <!-- Top Cockpit Bar -->
       <header class="top-bar">
-        <div class="top-bar-title">Supply Chain Risk Monitoring System</div>
+        <div class="d-flex align-items-center gap-3">
+          <button class="mobile-menu-toggle" id="mobileMenuBtn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="top-bar-title d-none d-md-block">Supply Chain Risk Monitoring System</div>
+          <div class="top-bar-title d-md-none">SCRMS</div>
+        </div>
         <!-- Live FX Ticker -->
         <div class="ticker-strip d-none d-lg-flex">
           <div class="ticker-inner" id="fxTicker"></div>
@@ -669,6 +719,36 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
+  // Mobile Sidebar Toggle
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (mobileMenuBtn && sidebar && sidebarOverlay) {
+      mobileMenuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+        sidebarOverlay.classList.toggle('show');
+      });
+
+      sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+      });
+      
+      // Close sidebar when clicking a nav item on mobile
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 991.98) {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+          }
+        });
+      });
+    }
+  });
+
   // Real-time ticking calendar clock
   function updateTime() {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
